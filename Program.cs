@@ -8,96 +8,78 @@ namespace CSLight
         static void Main(string[] args)
         {
             Battlefield battlefield = new Battlefield();
-            battlefield.ToBattle();
+            battlefield.Battle();
         }
     }
 
     class Battlefield
     {
-        private Creater _creater;
-        private List<Soldier> _squad1;
-        private List<Soldier> _squad2;
+        private Squad _squad1;
+        private Squad _squad2;
 
         public Battlefield()
         {
-            _creater = new Creater();
-            _squad1 = new List<Soldier>();
-            _squad2 = new List<Soldier>();
-
-            SoldiersCount = 15;
-            FillSquad(_squad1, SoldiersCount);
-            FillSquad(_squad2, SoldiersCount);
+            Random random = new Random();
+            _squad1 = new Squad(random);
+            _squad2 = new Squad(random);
         }
 
-        public int SoldiersCount { get; private set; }
-
-        public void ToBattle()
+        public void Battle()
         {
-            while (_squad1.Count > 0 && _squad2.Count > 0)
+            while (_squad1.GetCount() > 0 && _squad2.GetCount() > 0)
             {
-                Random random = new Random();
+                _squad1.Attack(_squad2);
+                _squad2.ChangePositions();
+                ShowSquadsStatus();
 
-                _squad1[random.Next(0, _squad1.Count)].Attack(_squad2);
-                _squad2[random.Next(0, _squad2.Count)].Attack(_squad1);
-
-                ChangePosition();
-
-                Console.Clear();
+                _squad2.Attack(_squad1);
+                _squad1.ChangePositions();
                 ShowSquadsStatus();
             }
 
-            if (_squad1.Count == 0 && _squad2.Count == 0)
+            if (_squad1.GetCount() == 0 && _squad2.GetCount() == 0)
             {
                 Console.WriteLine("Ничья!");
             }
-            else if (_squad2.Count == 0)
+            else if (_squad2.GetCount() == 0)
             {
-                Console.WriteLine("Победил первый игрок");
+                Console.WriteLine("Победил первый отряд");
             }
-            else
+            else if (_squad1.GetCount() == 0)
             {
-                Console.WriteLine("Победил второй игрок");
+                Console.WriteLine("Победил второй отряд");
             }
 
             Console.Read();
         }
 
-        public void ChangePosition()
-        {
-            for (int i = _squad1.Count - 1; i >= 0; i--)
-            {
-                if (_squad1[i].Health <= 0)
-                {
-                    _squad1.RemoveAt(i);
-                }
-            }
-
-            for (int i = _squad2.Count - 1; i >= 0; i--)
-            {
-                if (_squad2[i].Health <= 0)
-                {
-                    _squad2.RemoveAt(i);
-                }
-            }
-        }
-
         public void ShowSquadsStatus()
         {
-            Console.WriteLine("Первая команда");
+            Console.Clear();
 
-            for (int i = 0; i < _squad1.Count; i++)
-            {
-                Console.WriteLine($"{_squad1[i].TypeOfEquipment} - {_squad1[i].Health} HP");
-            }
+            Console.WriteLine("Первая команда\n");
+            _squad1.ShowSquadStatus();
 
-            Console.WriteLine("\nВторая команда");
-
-            for (int i = 0; i < _squad2.Count; i++)
-            {
-                Console.WriteLine($"{_squad2[i].TypeOfEquipment} - {_squad2[i].Health} HP");
-            }
-
+            Console.WriteLine("\n\nВторая команда\n");
+            _squad2.ShowSquadStatus();
             Console.ReadLine();
+        }
+    }
+
+    class Squad
+    {
+        private List<Soldier> _soldiers;
+        private SoldierCreater _soldierCreater;
+        private Random _random;
+
+        public Squad(Random random)
+        {
+            _soldierCreater = new SoldierCreater();
+            _soldiers = new List<Soldier>();
+            _random = random;
+
+            int SoldiersCount = 15;
+            FillSquad(_soldiers, SoldiersCount);
         }
 
         private void FillSquad(List<Soldier> squad, int soldiersCount)
@@ -106,25 +88,56 @@ namespace CSLight
 
             for (int i = 0; i < soldiersCount; i++)
             {
-                int typeOfSoldier = random.Next(0, 3);
+                int typeOfSoldierCount = 3;
+                int typeOfSoldier = random.Next(0, typeOfSoldierCount);
 
                 switch (typeOfSoldier)
                 {
                     case 0:
-                        squad.Add(_creater.CreateGranateLauncherGunner());
+                        squad.Add(_soldierCreater.CreateGranateLauncherGunner());
                         break;
                     case 1:
-                        squad.Add(_creater.CreateMachineGunner());
+                        squad.Add(_soldierCreater.CreateMachineGunner());
                         break;
                     case 2:
-                        squad.Add(_creater.CreateSniper());
+                        squad.Add(_soldierCreater.CreateSniper());
                         break;
                 }
             }
         }
+
+        public void Attack(Squad enemySquad)
+        {
+            if (GetCount() > 0 && enemySquad.GetCount() > 0)
+                _soldiers[_random.Next(0, GetCount())].Attack(enemySquad._soldiers);
+        }
+
+        public void ChangePositions()
+        {
+            for (int i = _soldiers.Count - 1; i >= 0; i--)
+            {
+                if (_soldiers[i].Health <= 0)
+                {
+                    _soldiers.RemoveAt(i);
+                }
+            }
+        }
+
+        public void ShowSquadStatus()
+        {
+            for (int i = 0; i < _soldiers.Count; i++)
+            {
+                Console.WriteLine($"{_soldiers[i].TypeOfEquipment} - {_soldiers[i].Health} HP");
+            }
+        }
+
+        public int GetCount()
+        {
+            return _soldiers.Count;
+        }
     }
 
-    class Creater
+    class SoldierCreater
     {
         public Soldier CreateGranateLauncherGunner()
         {
@@ -178,59 +191,47 @@ namespace CSLight
         public int RadiusOfDefeat { get; private set; }
         public int Damage { get; private set; }
 
-        public void Attack(List<Soldier> squad)
+        public void Attack(List<Soldier> soldiers)
         {
             Random random = new Random();
 
-            int numberOfAttackedSoldier = random.Next(0, squad.Count);
+            int numberOfAttackedSoldier = random.Next(0, soldiers.Count);
 
-            int howMuchSoldiersInLeft = numberOfAttackedSoldier;
-            int howMuchSoldiersInRight = squad.Count - numberOfAttackedSoldier - 1;
+            int soldiersCountFromLeft = numberOfAttackedSoldier;
+            int soldiersCountFromRight = soldiers.Count - numberOfAttackedSoldier - 1;
 
-            if (RadiusOfDefeat > howMuchSoldiersInLeft)
+            int leftDamagedSpase = GetCoordinates(soldiersCountFromLeft);
+
+            for (int i = 1; i <= leftDamagedSpase; i++)
             {
-                int leftDamagedSpase = howMuchSoldiersInLeft;
-
-                for (int i = 1; i <= leftDamagedSpase; i++)
-                {
-                    squad[numberOfAttackedSoldier - i].TakeDamage(Damage);
-                }
-            }
-            else
-            {
-                int leftDamagedSpase = RadiusOfDefeat;
-
-                for (int i = 1; i <= leftDamagedSpase; i++)
-                {
-                    squad[numberOfAttackedSoldier - i].TakeDamage(Damage);
-                }
+                soldiers[numberOfAttackedSoldier - i].TakeDamage(Damage);
             }
 
-            if (RadiusOfDefeat > howMuchSoldiersInRight)
-            {
-                int rightDamagedSpase = howMuchSoldiersInRight;
+            int rightDamagedSpase = GetCoordinates(soldiersCountFromRight);
 
-                for (int i = 1; i <= rightDamagedSpase; i++)
-                {
-                    squad[numberOfAttackedSoldier + i].TakeDamage(Damage);
-                }
-            }
-            else
+            for (int i = 1; i <= rightDamagedSpase; i++)
             {
-                int rightDamagedSpase = RadiusOfDefeat;
-
-                for (int i = 1; i <= rightDamagedSpase; i++)
-                {
-                    squad[numberOfAttackedSoldier + i].TakeDamage(Damage);
-                }
+                soldiers[numberOfAttackedSoldier + i].TakeDamage(Damage);
             }
 
-            squad[numberOfAttackedSoldier].TakeDamage(Damage);
+            soldiers[numberOfAttackedSoldier].TakeDamage(Damage);
         }
 
         public void TakeDamage(int damage)
         {
             Health -= Damage;
+        }
+
+        private int GetCoordinates(int soldiersCountFromSide)
+        {
+            if (RadiusOfDefeat > soldiersCountFromSide)
+            {
+                return soldiersCountFromSide;
+            }
+            else
+            {
+                return RadiusOfDefeat;
+            }
         }
     }
 }
