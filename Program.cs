@@ -37,6 +37,13 @@ namespace CSLight
                 ShowSquadsStatus();
             }
 
+            ShowResultOfBattle();
+
+            Console.Read();
+        }
+
+        public void ShowResultOfBattle()
+        {
             if (_squad1.GetCount() == 0 && _squad2.GetCount() == 0)
             {
                 Console.WriteLine("Ничья!");
@@ -49,8 +56,6 @@ namespace CSLight
             {
                 Console.WriteLine("Победил второй отряд");
             }
-
-            Console.Read();
         }
 
         public void ShowSquadsStatus()
