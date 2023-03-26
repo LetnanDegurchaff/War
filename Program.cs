@@ -29,11 +29,11 @@ namespace CSLight
             while (_squad1.GetCount() > 0 && _squad2.GetCount() > 0)
             {
                 _squad1.Attack(_squad2);
-                _squad2.ChangePositions();
+                _squad2.ReGroup();
                 ShowSquadsStatus();
 
                 _squad2.Attack(_squad1);
-                _squad1.ChangePositions();
+                _squad1.ReGroup();
                 ShowSquadsStatus();
             }
 
@@ -112,7 +112,7 @@ namespace CSLight
                 _soldiers[_random.Next(0, GetCount())].Attack(enemySquad._soldiers);
         }
 
-        public void ChangePositions()
+        public void ReGroup()
         {
             for (int i = _soldiers.Count - 1; i >= 0; i--)
             {
@@ -219,7 +219,7 @@ namespace CSLight
 
         public void TakeDamage(int damage)
         {
-            Health -= Damage;
+            Health -= damage;
         }
 
         private int GetCoordinates(int soldiersCountFromSide)
