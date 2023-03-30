@@ -29,11 +29,11 @@ namespace CSLight
             while (_squad1.GetCount() > 0 && _squad2.GetCount() > 0)
             {
                 _squad1.Attack(_squad2);
-                _squad2.ReGroup();
+                _squad2.RemoveDeadSoldiers();
                 ShowSquadsStatus();
 
                 _squad2.Attack(_squad1);
-                _squad1.ReGroup();
+                _squad1.RemoveDeadSoldiers();
                 ShowSquadsStatus();
             }
 
@@ -83,41 +83,30 @@ namespace CSLight
             _soldiers = new List<Soldier>();
             _random = random;
 
-            int SoldiersCount = 15;
-            FillSquad(_soldiers, SoldiersCount);
+            int soldiersCount = 15;
+            Fill(_soldiers, soldiersCount);
         }
 
-        private void FillSquad(List<Soldier> squad, int soldiersCount)
+        private void Fill(List<Soldier> squad, int soldiersCount)
         {
-            Random random = new Random();
-
             for (int i = 0; i < soldiersCount; i++)
             {
-                int typeOfSoldierCount = 3;
-                int typeOfSoldier = random.Next(0, typeOfSoldierCount);
-
-                switch (typeOfSoldier)
-                {
-                    case 0:
-                        squad.Add(_soldierCreater.CreateGranateLauncherGunner());
-                        break;
-                    case 1:
-                        squad.Add(_soldierCreater.CreateMachineGunner());
-                        break;
-                    case 2:
-                        squad.Add(_soldierCreater.CreateSniper());
-                        break;
-                }
+                squad.Add(_soldierCreater.CreateRandomSoldier());
             }
         }
 
         public void Attack(Squad enemySquad)
         {
             if (GetCount() > 0 && enemySquad.GetCount() > 0)
-                _soldiers[_random.Next(0, GetCount())].Attack(enemySquad._soldiers);
+                _soldiers[_random.Next(0, GetCount())].Attack(enemySquad.GetAttackedSoldiers());
         }
 
-        public void ReGroup()
+        public List<Soldier> GetAttackedSoldiers()
+        {
+            return _soldiers;
+        }
+
+        public void RemoveDeadSoldiers()
         {
             for (int i = _soldiers.Count - 1; i >= 0; i--)
             {
@@ -144,6 +133,18 @@ namespace CSLight
 
     class SoldierCreater
     {
+        public Soldier CreateRandomSoldier()
+        {
+            Random random = new Random();
+            List<Soldier> soldiers = new List<Soldier>();
+
+            soldiers.Add(CreateGranateLauncherGunner());
+            soldiers.Add(CreateMachineGunner());
+            soldiers.Add(CreateSniper());
+
+            return soldiers[random.Next(0, soldiers.Count)];
+        }
+
         public Soldier CreateGranateLauncherGunner()
         {
             Random random = new Random();
