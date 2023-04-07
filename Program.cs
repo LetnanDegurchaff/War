@@ -7,10 +7,8 @@ namespace CSLight
     {
         private static Random _random = new Random();
 
-        public static int GenerateRandomNumber(int min, int max)
-        {
-            return _random.Next(min, max);
-        }
+        public static int GenerateRandomNumber(int min, int max) =>
+            _random.Next(min, max);
     }
 
     internal class Program
@@ -29,7 +27,7 @@ namespace CSLight
 
         public void Battle()
         {
-            while (_squad1.GetSoldiersCount > 0 && _squad2.GetSoldiersCount > 0)
+            while (_squad1.SoldiersCount > 0 && _squad2.SoldiersCount > 0)
             {
                 _squad1.Attack(_squad2);
                 _squad2.RemoveDeadSoldiers();
@@ -45,7 +43,7 @@ namespace CSLight
             Console.Read();
         }
 
-        public void ShowSquadsStatus()
+        private void ShowSquadsStatus()
         {
             Console.Clear();
 
@@ -57,13 +55,13 @@ namespace CSLight
             Console.ReadLine();
         }
 
-        public void ShowBattleResults()
+        private void ShowBattleResults()
         {
-            if (_squad1.GetSoldiersCount == 0 && _squad2.GetSoldiersCount == 0)
+            if (_squad1.SoldiersCount == 0 && _squad2.SoldiersCount == 0)
             {
                 Console.WriteLine("Ничья!");
             }
-            else if (_squad2.GetSoldiersCount == 0)
+            else if (_squad2.SoldiersCount == 0)
             {
                 Console.WriteLine("Победил первый отряд");
             }
@@ -74,38 +72,34 @@ namespace CSLight
         }
     }
 
-    interface IAttackbleReadOnlySquad
+    interface IDamagebleReadOnlySquad
     {
-        int GetSoldiersCount { get; }
         IReadOnlyList<IDamageble> GetAttackedSoldiers();
     }
 
-    class Squad : IAttackbleReadOnlySquad
+    class Squad : IDamagebleReadOnlySquad
     {
         private SoldierCreator _soldierCreator = new SoldierCreator();
         private List<Soldier> _soldiers = new List<Soldier>();
+        private int _soldiersCount = 15;
 
         public Squad()
         {
-            int soldiersCount = 15;
-
-            for (int i = 0; i < soldiersCount; i++)
+            for (int i = 0; i < _soldiersCount; i++)
             {
                 _soldiers.Add(_soldierCreator.CreateRandomSoldier());
             }
         }
 
-        public int GetSoldiersCount => _soldiers.Count;
+        public int SoldiersCount => _soldiers.Count;
 
-        public IReadOnlyList<IDamageble> GetAttackedSoldiers()
-        {
-            return _soldiers;
-        }
+        public IReadOnlyList<IDamageble> GetAttackedSoldiers() => _soldiers;
+        
 
-        public void Attack(IAttackbleReadOnlySquad enemySquad)
+        public void Attack(IDamagebleReadOnlySquad enemySquad)
         {
-            if (GetSoldiersCount > 0 && enemySquad.GetSoldiersCount > 0)
-                _soldiers[UserUtils.GenerateRandomNumber(0, GetSoldiersCount)]
+            if (SoldiersCount > 0 && enemySquad.GetAttackedSoldiers().Count > 0)
+                _soldiers[UserUtils.GenerateRandomNumber(0, SoldiersCount)]
                     .Attack(enemySquad.GetAttackedSoldiers());
         }
 
@@ -140,8 +134,7 @@ namespace CSLight
     {
         public Soldier(int health, int damage)
         {
-            Health = health;
-            Damage = damage;
+            (Health, Damage) = (health, damage);
         }
 
         public int Health { get; private set; }
@@ -161,9 +154,12 @@ namespace CSLight
 
     class GranateLauncherGunner : Soldier
     {
-        private const int RadiusOfDefeat = 3;
+        private int _radiusOfDefeat = 3;
 
-        public GranateLauncherGunner() : base(4, 3) { }
+        public GranateLauncherGunner(int RadiusOfDefeat) : base(4, 3)
+        {
+            _radiusOfDefeat = RadiusOfDefeat;
+        }
 
         public override void Attack(IReadOnlyList<IDamageble> enemySoldiers)
         {
@@ -191,13 +187,13 @@ namespace CSLight
 
         private int GetCoordinates(int soldiersCountFromSide)
         {
-            if (RadiusOfDefeat > soldiersCountFromSide)
+            if (_radiusOfDefeat > soldiersCountFromSide)
             {
                 return soldiersCountFromSide;
             }
             else
             {
-                return RadiusOfDefeat;
+                return _radiusOfDefeat;
             }
         }
     }
@@ -225,9 +221,9 @@ namespace CSLight
             _creatorsDictionary.Add(typeof(MachineGunner), CreateMachineGunner);
             _creatorsDictionary.Add(typeof(Sniper), CreateSniper);
 
-            foreach (KeyValuePair<Type, Func<Soldier>> creatorsDictionary in _creatorsDictionary)
+            foreach (KeyValuePair<Type, Func<Soldier>> creator in _creatorsDictionary)
             {
-                _types.Add(creatorsDictionary.Key);
+                _types.Add(creator.Key);
             }
         }
 
@@ -240,17 +236,13 @@ namespace CSLight
 
         private Soldier CreateGranateLauncherGunner()
         {
-            return new GranateLauncherGunner();
+            int radiusOfDefeat = 3;
+
+            return new GranateLauncherGunner(radiusOfDefeat);
         }
 
-        private Soldier CreateMachineGunner()
-        {
-            return new MachineGunner();
-        }
+        private Soldier CreateMachineGunner() => new MachineGunner();
 
-        private Soldier CreateSniper()
-        {
-            return new Sniper();
-        }
+        private Soldier CreateSniper() => new Sniper();
     }
 }
