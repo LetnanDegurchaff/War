@@ -27,11 +27,6 @@ namespace CSLight
         private Squad _squad1 = new Squad();
         private Squad _squad2 = new Squad();
 
-        public Battlefield()
-        {
-
-        }
-
         public void Battle()
         {
             while (_squad1.GetSoldiersCount > 0 && _squad2.GetSoldiersCount > 0)
@@ -79,7 +74,13 @@ namespace CSLight
         }
     }
 
-    class Squad
+    interface IAttackbleReadOnlySquad
+    {
+        int GetSoldiersCount { get; }
+        IReadOnlyList<IDamageble> GetAttackedSoldiers();
+    }
+
+    class Squad : IAttackbleReadOnlySquad
     {
         private SoldierCreator _soldierCreator = new SoldierCreator();
         private List<Soldier> _soldiers = new List<Soldier>();
@@ -101,7 +102,7 @@ namespace CSLight
             return _soldiers;
         }
 
-        public void Attack(Squad enemySquad)
+        public void Attack(IAttackbleReadOnlySquad enemySquad)
         {
             if (GetSoldiersCount > 0 && enemySquad.GetSoldiersCount > 0)
                 _soldiers[UserUtils.GenerateRandomNumber(0, GetSoldiersCount)]
